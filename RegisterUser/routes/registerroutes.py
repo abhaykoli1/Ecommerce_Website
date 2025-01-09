@@ -75,17 +75,37 @@ async def add_user(body: RegisterModel):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+@router.delete("/api/v1/users")
+async def delete_all_users():
+    try:
+        deleted_count = RegisterTable.objects.delete()
+        return {
+            "message": f"Deleted {deleted_count} user(s) successfully",
+            "status": True,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 
 @router.post("/api/v1/login")
-async def login_user(body: RegisterModel):
-    # Check if user exists
-    user = RegisterTable.objects(email=body.email).first()
+async def login_user(body: dict):
+    email_or_phone = body.get("email")  # This field can be either email or phone
+    password = body.get("password")
+
+    if not email_or_phone or not password:
+        raise HTTPException(status_code=400, detail="Email/Phone and password are required")
+
+    # Check if user exists by email or phone
+    user = RegisterTable.objects(
+        (RegisterTable.email == email_or_phone) | (RegisterTable.phone == email_or_phone)
+    ).first()
+
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid email or password")
+        raise HTTPException(status_code=400, detail="Invalid email/phone or password")
 
     # Verify password
-    if not verify_password(body.password, user.password):
-        raise HTTPException(status_code=400, detail="Invalid email or password")
+    if not verify_password(password, user.password):
+        raise HTTPException(status_code=400, detail="Invalid email/phone or password")
 
     # Create JWT token
     token = create_jwt_token({"id": str(user.id), "email": user.email})
@@ -99,26 +119,3 @@ async def login_user(body: RegisterModel):
     }
 
 
-@router.get("/login")
-async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-
-@router.get("/register")
-async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
-
-
-@router.get("/")
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-# Middleware to check authentication
-@router.get("/api/v1/auth-check")
-async def auth_check(token: str):
-    try:
-        user_data = decode_jwt_token(token)
-        return {"isAuthenticated": True, "user": user_data}
-    except HTTPException as e:
-        return {"isAuthenticated": False, "user": None}
