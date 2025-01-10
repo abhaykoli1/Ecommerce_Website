@@ -27,13 +27,13 @@ connect('Ecommerce', host="mongodb+srv://abhaykoli214:Abhaykoli0@bikerental.ocb4
 # Initialize FastAPI app
 app = FastAPI()
 
-# Add CORS Middleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict to frontend domain
+    allow_origins=["http://localhost:5173"],  # Replace with process.env.CLIENT_URL equivalent
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "PUT"],
+    allow_headers=["Content-Type", "Authorization", "Cache-Control", "Expires", "Pragma"],
 )
 
 # Add Session Middleware

@@ -1,6 +1,6 @@
 import jwt
 import datetime
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request, Depends, Response
 from fastapi.templating import Jinja2Templates
 from passlib.context import CryptContext
 from pydantic import EmailStr
@@ -87,15 +87,47 @@ async def delete_all_users():
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
+# @router.post("/api/v1/login")
+# async def login_user(body: dict, response: Response):
+#     email_or_phone = body.get("email")  # This field can be either email or phone
+#     password = body.get("password")
+
+#     if not email_or_phone or not password:
+#         raise HTTPException(status_code=400, detail="Email/Phone and password are required")
+
+#     user = RegisterTable.objects(
+#         (RegisterTable.email == email_or_phone) | (RegisterTable.phone == email_or_phone)
+#     ).first()
+
+#     if not user:
+#         raise HTTPException(status_code=400, detail="Invalid email/phone or password")
+
+#     # Verify password
+#     if not verify_password(password, user.password):
+#         raise HTTPException(status_code=400, detail="Invalid email/phone or password")
+
+#     # Create JWT token
+#     # token = create_jwt_token({"id": str(user.id), "email": user.email})
+
+    
+
+#     return JSONResponse(
+#         content={
+#             "message": "Login successful",
+#             "status": True,
+#             "isAuthenticated": True,
+#             "user": {"name": user.name, "email": user.email},
+#         }
+#     )
 @router.post("/api/v1/login")
-async def login_user(body: dict):
+async def login_user(body: dict, response: Response):
     email_or_phone = body.get("email")  # This field can be either email or phone
     password = body.get("password")
 
     if not email_or_phone or not password:
         raise HTTPException(status_code=400, detail="Email/Phone and password are required")
 
-    # Check if user exists by email or phone
+    # Find user by email or phone
     user = RegisterTable.objects(
         (RegisterTable.email == email_or_phone) | (RegisterTable.phone == email_or_phone)
     ).first()
@@ -110,12 +142,22 @@ async def login_user(body: dict):
     # Create JWT token
     token = create_jwt_token({"id": str(user.id), "email": user.email})
 
-    return {
-        "message": "Login successful",
-        "status": True,
-        "isAuthenticated": True,
-        "token": token,
-        "user": {"name": user.name, "email": user.email},
-    }
+    # Set token in cookie
+    response.set_cookie(
+        key="token",
+        value=token,
+        httponly=True,  # Prevent JavaScript from accessing the cookie
+        secure=True,  # Send cookie over HTTPS only
+        samesite="strict",  # Prevent cross-site request forgery (CSRF)
+        path="/"  # Cookie is accessible across the whole domain
+    )
 
-
+    # Return a response without including the token in the body
+    return JSONResponse(
+        content={
+            "message": "Login successful",
+            "status": True,
+            "isAuthenticated": True,
+            "user": {"name": user.name, "email": user.email},
+        }
+    )
