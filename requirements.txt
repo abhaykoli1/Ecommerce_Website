@@ -3,3 +3,5 @@ uvicorn
 python-dotenv
 mongoengine
 jinja2
+cloudinary
+# pip install fastapi mongoengine pydantic email-validator uvicorn

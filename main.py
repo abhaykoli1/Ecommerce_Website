@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 from mongoengine import connect
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from RegisterUser.routes import registerroutes
+from Auth.routes import userroutes
+from imageUpload import imageuploadroutes
+from products.routes import productsroutes
 
 # Load environment variables
 load_dotenv()
@@ -18,34 +20,24 @@ MONGO_URI = os.getenv("MONGO_URI")
 if not MONGO_URI:
     raise ValueError("MONGO_URI not found in .env file")
 
-# Connect to MongoDB
-
 
 connect('Ecommerce', host="mongodb+srv://abhaykoli214:Abhaykoli0@bikerental.ocb4d.mongodb.net/Ecommerce")
-# connect('UAAWebsite', host="mongodb+srv://avbigbuddy:nZ4ATPTwJjzYnm20@cluster0.wplpkxz.mongodb.net/UAAWebsite")
 
-# Initialize FastAPI app
 app = FastAPI()
-
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Replace with process.env.CLIENT_URL equivalent
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH", "DELETE", "PUT"],
-    allow_headers=["Content-Type", "Authorization", "Cache-Control", "Expires", "Pragma"],
+    allow_origins=["http://localhost:5173"], 
+    allow_credentials=True,  
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "PUT"],   
+    allow_headers=["Content-Type", "Authorization", "Cache-Control", "Expires", "Pragma"],  # Allowed headers
+
 )
 
-# Add Session Middleware
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=SECRET_KEY,
-    max_age=604800,
-    session_cookie="your_session_cookie",
-)
+app.include_router(userroutes.router, tags=["Auth"])
+app.include_router(productsroutes.router, tags=["products"])
+app.include_router(imageuploadroutes.router, tags=["image Upload"])
 
-# Include routes
-app.include_router(registerroutes.router, tags=["Registration"])
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8080, reload=True)

@@ -4,18 +4,21 @@ from datetime import datetime
 from typing import Optional
 
 # MongoDB Model
-class RegisterTable(Document):
+class UserTable(Document):
     name = StringField(required=True)
     email = StringField(required=True, unique=True)
     password = StringField(required=True)
+    role = StringField(default= "user" ,required=False)
     phone = StringField(required=False)
-    # country_code = StringField(required=False)
-    created_at = DateTimeField(default=datetime.utcnow)
+    country_code = StringField(required=False)
+    created_at = DateTimeField(default=datetime.utcnow , required=False)
 
 # Pydantic Model
-class RegisterModel(BaseModel):
+class UserModel(BaseModel):
     name: str
     email: str  # Use EmailStr for stricter validation
+    role : Optional[str] = "user"
     password: str
     phone: Optional[str] = None  # Optional fields should use Optional
     country_code: Optional[str] = None
+    created_at: datetime = None
